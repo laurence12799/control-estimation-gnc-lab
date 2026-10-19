@@ -1,0 +1,27 @@
+# Python environments and generated files
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Test, lint, and coverage caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Generated experiment output and notebook state
+runs/
+.ipynb_checkpoints/
+
+# Local editor settings and secrets
+.vscode/
+.idea/
+.env
+.env.*
+
+# Local Quarto rendering artifacts
+.quarto/
+reports/**/_rendered/

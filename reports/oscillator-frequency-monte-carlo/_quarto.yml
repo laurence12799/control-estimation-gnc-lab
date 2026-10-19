@@ -1,0 +1,17 @@
+project:
+  type: default
+  output-dir: _rendered
+  render:
+    - oscillator-frequency-monte-carlo.qmd
+
+execute:
+  freeze: auto
+
+format:
+  html:
+    toc: false
+    embed-resources: false
+  pdf:
+    documentclass: scrartcl
+    geometry:
+      - margin=1in

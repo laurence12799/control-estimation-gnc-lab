@@ -1,0 +1,103 @@
+---
+title: "Oscillator Frequency Monte Carlo"
+subtitle: "Simulation-engine infrastructure milestone"
+author: "Laurence A. Leon"
+date: "2026-10-18"
+---
+
+## 1. What claim did I test?
+
+**Claim.** The fixed-step simulation engine can execute a reproducible
+Monte Carlo ensemble of model-parameter variations, retain each trial's exact
+parameter value in result metadata, and produce a post-processing figure that
+makes the resulting response spread inspectable.
+
+This is an infrastructure claim, not a claim that a harmonic oscillator is an
+adequate engineering model for a future project system. The purpose is to show
+that model variation is applied outside the plant kernel, each realization is
+traceable, and the ensemble can be reduced into a useful engineering plot.
+
+## 2. What model, assumptions, and limitations apply?
+
+Each trial uses the test-only unforced harmonic oscillator:
+
+$$
+\dot{x}_1 = x_2, \qquad
+\dot{x}_2 = -\omega^2 x_1.
+$$
+
+The initial condition is $x(0) = [1, 0]^T$, the plant step is 0.01 s, and the
+duration is 8.0 s. The experiment samples 24 natural frequencies from a normal
+distribution with nominal mean 1.0 rad/s and standard deviation 0.12 rad/s;
+samples are lower-bounded at 0.1 rad/s. The named experiment-level random
+stream uses seed `20261018`.
+
+The sampled set had mean 1.01594 rad/s, sample standard deviation 0.11708
+rad/s, and range 0.72057–1.29148 rad/s. There are no sensors, controller,
+estimator, actuator, disturbances, damping, parameter correlations, or
+continuous-time uncertainty model. The distribution and trial count are
+teaching choices, not a physical uncertainty characterization.
+
+## 3. How do I reproduce it?
+
+From the repository root, create the locked Python environment, verify the
+example suite, and regenerate the versioned figure:
+
+```text
+uv sync
+uv run pytest
+uv run python -m gnc_lab.examples.simulation_engine_examples
+```
+
+The Monte Carlo source is
+`src/gnc_lab/examples/simulation_engine_examples.py`; its function
+`run_oscillator_frequency_monte_carlo()` uses a named stream for frequency
+samples and records every sampled value in
+`SimulationMetadata.attributes["natural_frequency_rad_s"]` with round-trip
+precision.
+
+Render this report from the repository root after installing Quarto:
+
+```text
+quarto render reports/oscillator-frequency-monte-carlo
+quarto render reports/oscillator-frequency-monte-carlo --to pdf
+```
+
+The project-level `_quarto.yml` supplies shared HTML/PDF configuration and
+`execute.freeze: auto`. Rendered artifacts are written to `_rendered/`, which
+is intentionally excluded from version control; the source report and its
+input figure are versioned.
+
+## 4. What metrics and failure cases did I observe?
+
+| Metric | Observation |
+| --- | --- |
+| Trial count | 24 oscillator realizations |
+| Frequency samples | Mean 1.01594 rad/s; sample standard deviation 0.11708 rad/s |
+| Frequency range | 0.72057–1.29148 rad/s |
+| Final-position spread at 8.0 s | 5th/50th/95th percentiles: -0.97241, -0.16755, 0.77805 |
+| Numerical outcome | All 24 truth-state histories remained finite |
+| Reproducibility | Re-running the same seed reproduced both sampled frequencies and state histories |
+
+![Twenty-four oscillator trajectories, their 5–95% position envelope and
+median, with the sampled-frequency histogram.](../../docs/figures/simulation-engine/oscillator_frequency_monte_carlo.png){#fig-oscillator-monte-carlo fig-alt="Oscillator position ensemble and histogram of sampled natural frequencies."}
+
+The expected failure mode of parameter variation is increasing phase spread,
+not numerical failure; the ensemble exhibits that spread while staying finite.
+During implementation, the first metadata representation rounded sampled
+frequencies for display and could not exactly reconstruct the floating-point
+trial value. The example test exposed that provenance failure. The recorded
+attribute now uses round-trip precision and is checked by the test suite.
+
+## 5. What changed next because of the evidence?
+
+The evidence led to three concrete infrastructure changes: an ensemble plotting
+utility, a deterministic experiment-level parameter stream, and exact
+per-trial parameter provenance. The example suite now tests both repeated-run
+reproducibility and the presence of each stored model variation.
+
+For a first user-owned plant, the next report should replace this teaching
+distribution with documented parameter sources, define the performance metric
+before running the ensemble, and retain the configuration/metadata with every
+reported figure. Publishing a GitHub Pages site remains deferred until that
+first engineering milestone has reviewed evidence.
