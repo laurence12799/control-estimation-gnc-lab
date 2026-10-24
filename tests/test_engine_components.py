@@ -31,6 +31,12 @@ from tests.simulation_doubles import (
 
 
 def _component_permutations() -> list[tuple[bool, bool, bool, bool, bool, bool]]:
+    """@brief Return all valid optional-component inclusion combinations.
+
+    @return list[tuple[bool, bool, bool, bool, bool, bool]]: Boolean flags
+        for sensor, estimator, planner, controller, actuator, and source.
+    @note Controller and command source are intentionally mutually exclusive.
+    """
     return [
         permutation
         for permutation in product((False, True), repeat=6)
@@ -72,10 +78,14 @@ def test_every_valid_optional_component_assembly_runs(
         config=SimulationConfig(start_time=0.0, stop_time=0.2, plant_dt=0.1),
         metadata=SimulationMetadata(name="component combination", seed=9),
         planner=(
-            TimedComponent(planner, PeriodicSchedule(period=0.2)) if include_planner else None
+            TimedComponent(planner, PeriodicSchedule(period=0.2))
+            if include_planner
+            else None
         ),
         controller=(
-            TimedComponent(controller, PeriodicSchedule(period=0.2)) if include_controller else None
+            TimedComponent(controller, PeriodicSchedule(period=0.2))
+            if include_controller
+            else None
         ),
         estimator=estimator if include_estimator else None,
         sensors=(SensorBinding("test-sensor", sensor, PeriodicSchedule(period=0.1)),)
@@ -121,11 +131,17 @@ def test_truth_snapshot_is_used_for_feedback_when_no_estimator_is_configured() -
         )
     )
 
-    assert all(isinstance(feedback, ModelSnapshot) for feedback in planner.feedback_history)
-    assert all(isinstance(feedback, ModelSnapshot) for feedback in controller.feedback_history)
+    assert all(
+        isinstance(feedback, ModelSnapshot) for feedback in planner.feedback_history
+    )
+    assert all(
+        isinstance(feedback, ModelSnapshot) for feedback in controller.feedback_history
+    )
 
 
-def test_estimator_output_replaces_truth_feedback_when_an_estimator_is_configured() -> None:
+def test_estimator_output_replaces_truth_feedback_when_an_estimator_is_configured() -> (
+    None
+):
     """A controller receives the estimator's published representation when present."""
     controller = StatefulController()
     estimator = StatefulEstimator()
@@ -153,7 +169,9 @@ def test_command_source_and_controller_are_rejected_together() -> None:
                 initial_state=np.array([0.0]),
                 config=SimulationConfig(start_time=0.0, stop_time=0.1, plant_dt=0.1),
                 metadata=SimulationMetadata(name="invalid command ownership"),
-                controller=TimedComponent(StatefulController(), PeriodicSchedule(period=0.1)),
+                controller=TimedComponent(
+                    StatefulController(), PeriodicSchedule(period=0.1)
+                ),
                 command_source=StatefulCommandSource(),
             )
         )
@@ -168,6 +186,15 @@ def _assert_component_history(
     include_controller: bool,
     include_actuator: bool,
 ) -> None:
+    """@brief Assert provenance includes exactly the configured components.
+
+    @param component_states Mapping[str, Any]: Recorded component snapshots.
+    @param include_sensor bool: Whether sensor state is expected.
+    @param include_estimator bool: Whether estimator state is expected.
+    @param include_planner bool: Whether planner state is expected.
+    @param include_controller bool: Whether controller state is expected.
+    @param include_actuator bool: Whether actuator state is expected.
+    """
     expected_names = {
         name
         for name, included in {

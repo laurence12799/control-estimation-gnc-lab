@@ -16,12 +16,16 @@ class ConstantRateTestDouble:
         """Provide a constant input without representing any physical system."""
         return 2.0
 
-    def derivative(self, time: float, state: np.ndarray, plant_input: float) -> np.ndarray:
+    def derivative(
+        self, time: float, state: np.ndarray, plant_input: float
+    ) -> np.ndarray:
         """Return a constant derivative for an engine-level numerical check."""
         del time, state
         return np.array([plant_input])
 
-    def output(self, time: float, state: np.ndarray, plant_input: float) -> dict[str, float]:
+    def output(
+        self, time: float, state: np.ndarray, plant_input: float
+    ) -> dict[str, float]:
         """Return an arbitrary truth output suitable for recording checks."""
         del time, plant_input
         return {"value": float(state[0])}

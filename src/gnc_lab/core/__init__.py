@@ -1,4 +1,6 @@
-"""Shared conventions and foundational types for the lab."""
+"""@file __init__.py
+@brief Re-export shared conventions and foundational numerical types.
+"""
 
 from gnc_lab.core.types import FloatVector, as_float_vector
 

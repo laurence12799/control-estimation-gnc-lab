@@ -11,6 +11,7 @@ from gnc_lab.sim.types import (
     SimulationConfig,
     SimulationMetadata,
     SimulationPlan,
+    SimulationResult,
     TimedComponent,
 )
 from tests.simulation_doubles import (
@@ -23,36 +24,59 @@ from tests.simulation_doubles import (
 
 def test_sensor_noise_is_reproducible_for_the_same_run_seed() -> None:
     """Repeating a plan seed repeats the full primary-sensor noise sequence."""
-    first = _primary_measurements(_noise_result(seed=41, include_unrelated_components=False))
-    second = _primary_measurements(_noise_result(seed=41, include_unrelated_components=False))
+    first = _primary_measurements(
+        _noise_result(seed=41, include_unrelated_components=False)
+    )
+    second = _primary_measurements(
+        _noise_result(seed=41, include_unrelated_components=False)
+    )
 
     np.testing.assert_array_equal(first, second)
 
 
 def test_primary_sensor_noise_is_isolated_from_unrelated_components() -> None:
     """Adding sensors and a noisy actuator does not advance the primary stream."""
-    baseline = _primary_measurements(_noise_result(seed=41, include_unrelated_components=False))
-    expanded = _primary_measurements(_noise_result(seed=41, include_unrelated_components=True))
+    baseline = _primary_measurements(
+        _noise_result(seed=41, include_unrelated_components=False)
+    )
+    expanded = _primary_measurements(
+        _noise_result(seed=41, include_unrelated_components=True)
+    )
 
     np.testing.assert_array_equal(baseline, expanded)
 
 
 def test_sensor_noise_changes_when_the_run_seed_changes() -> None:
     """The run metadata seed actually selects a different random realization."""
-    first = _primary_measurements(_noise_result(seed=41, include_unrelated_components=False))
-    second = _primary_measurements(_noise_result(seed=42, include_unrelated_components=False))
+    first = _primary_measurements(
+        _noise_result(seed=41, include_unrelated_components=False)
+    )
+    second = _primary_measurements(
+        _noise_result(seed=42, include_unrelated_components=False)
+    )
 
     assert not np.array_equal(first, second)
 
 
-def _noise_result(seed: int, include_unrelated_components: bool):
+def _noise_result(seed: int, include_unrelated_components: bool) -> SimulationResult:
+    """@brief Run one test plan for component-noise isolation.
+
+    @param seed int: Root seed for the simulation result.
+    @param include_unrelated_components bool: Whether to add unrelated noisy
+        components that must not perturb the primary sensor stream.
+    @return SimulationResult: Completed result containing primary measurements.
+    """
     sensors = [
-        SensorBinding("primary", NoiseSensor(noise_standard_deviation=1.0), PeriodicSchedule(0.1))
+        SensorBinding(
+            "primary", NoiseSensor(noise_standard_deviation=1.0), PeriodicSchedule(0.1)
+        )
     ]
     if include_unrelated_components:
         sensors.append(
             SensorBinding(
-                "unrelated", NoiseSensor(noise_standard_deviation=1.0), PeriodicSchedule(0.1)
+                "unrelated",
+                NoiseSensor(noise_standard_deviation=1.0),
+                PeriodicSchedule(0.1),
             )
         )
 
@@ -73,7 +97,12 @@ def _noise_result(seed: int, include_unrelated_components: bool):
     )
 
 
-def _primary_measurements(result) -> np.ndarray:
+def _primary_measurements(result: SimulationResult) -> np.ndarray:
+    """@brief Extract primary-sensor measurements from a test result.
+
+    @param result SimulationResult: Result containing a ``primary`` sensor.
+    @return np.ndarray: Primary measurement sequence.
+    """
     return np.asarray(
         [record.measurements["primary"].value for record in result.records],
         dtype=np.float64,

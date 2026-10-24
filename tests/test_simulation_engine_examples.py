@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
 from gnc_lab.examples.simulation_engine_examples import (
@@ -18,7 +20,11 @@ def test_each_engine_example_runs_two_finite_open_loop_cases() -> None:
     """The examples provide two runnable cases per simple dynamic-system type."""
     cases = run_example_simulations()
 
-    assert set(cases) == {"first_order_lag", "harmonic_oscillator", "mass_spring_damper"}
+    assert set(cases) == {
+        "first_order_lag",
+        "harmonic_oscillator",
+        "mass_spring_damper",
+    }
     for system_cases in cases.values():
         assert len(system_cases) == 2
         for result in system_cases.values():
@@ -28,7 +34,7 @@ def test_each_engine_example_runs_two_finite_open_loop_cases() -> None:
             assert result.times[-1] > result.times[0]
 
 
-def test_engine_examples_render_state_history_figures(tmp_path) -> None:
+def test_engine_examples_render_state_history_figures(tmp_path: Path) -> None:
     """State-dynamics figures are generated without a GUI or notebook session."""
     figures = render_example_figures(tmp_path)
 
@@ -42,16 +48,22 @@ def test_engine_examples_render_state_history_figures(tmp_path) -> None:
     assert all(path.is_file() and path.stat().st_size > 0 for path in figures.values())
 
 
-def test_oscillator_frequency_monte_carlo_is_reproducible_and_records_variations() -> None:
+def test_oscillator_frequency_monte_carlo_is_reproducible_and_records_variations() -> (
+    None
+):
     """Parameter variation has a stable trial set and retains each sampled value."""
-    first_frequencies, first_results = run_oscillator_frequency_monte_carlo(seed=123, trial_count=8)
+    first_frequencies, first_results = run_oscillator_frequency_monte_carlo(
+        seed=123, trial_count=8
+    )
     second_frequencies, second_results = run_oscillator_frequency_monte_carlo(
         seed=123, trial_count=8
     )
 
     np.testing.assert_array_equal(first_frequencies, second_frequencies)
     assert np.std(first_frequencies) > 0.0
-    for trial_index, (first, second) in enumerate(zip(first_results, second_results, strict=True)):
+    for trial_index, (first, second) in enumerate(
+        zip(first_results, second_results, strict=True)
+    ):
         assert first.metadata.tags == ("simulation-engine-example", "monte-carlo")
         assert first.metadata.attributes["trial"] == str(trial_index)
         assert (
@@ -68,8 +80,13 @@ def test_truth_and_estimator_feedback_examples_follow_distinct_data_routes() -> 
     estimate = cases["Held measurement estimate"]
 
     assert all(isinstance(record.feedback, ModelSnapshot) for record in truth.records)
-    assert all(isinstance(record.feedback, PositionEstimateExample) for record in estimate.records)
+    assert all(
+        isinstance(record.feedback, PositionEstimateExample)
+        for record in estimate.records
+    )
     assert truth.records[-1].component_states["controller"]["last_kind"] == "truth"
-    assert estimate.records[-1].component_states["controller"]["last_kind"] == "estimate"
+    assert (
+        estimate.records[-1].component_states["controller"]["last_kind"] == "estimate"
+    )
     assert estimate.records[-1].component_states["sensors"]["position"]["samples"] == 41
     assert not np.allclose(truth.states, estimate.states)

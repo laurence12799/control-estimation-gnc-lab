@@ -44,7 +44,9 @@ def test_result_retains_configuration_initial_conditions_and_signal_history() ->
         config=config,
         metadata=metadata,
         initial_command=-1.0,
-        planner=TimedComponent(planner, PeriodicSchedule(0.1), initial_condition={"phase": 3}),
+        planner=TimedComponent(
+            planner, PeriodicSchedule(0.1), initial_condition={"phase": 3}
+        ),
         controller=TimedComponent(
             controller, PeriodicSchedule(0.1), initial_condition={"mode": "auto"}
         ),
@@ -66,7 +68,9 @@ def test_result_retains_configuration_initial_conditions_and_signal_history() ->
 
     assert result.config == config
     assert result.metadata == metadata
-    np.testing.assert_array_equal(result.initial_conditions.plant_state, np.array([2.0]))
+    np.testing.assert_array_equal(
+        result.initial_conditions.plant_state, np.array([2.0])
+    )
     assert result.initial_conditions.command == -1.0
     assert result.initial_conditions.planner == {"phase": 3}
     assert result.initial_conditions.controller == {"mode": "auto"}

@@ -8,6 +8,9 @@
 - Generated experiment output: `runs/`, excluded from version control.
 - Source of truth: reviewed Python modules and named configurations, not
   notebooks or manually edited figures.
+- Python code and documentation: follow the project
+  [Python style policy](python-style.md), including Doxygen-style docstrings
+  for public and private code.
 
 ## Conventions to establish before the first model
 

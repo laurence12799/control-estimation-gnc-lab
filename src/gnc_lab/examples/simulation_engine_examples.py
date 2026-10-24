@@ -1,4 +1,5 @@
-"""Small test-only systems that exercise the generic simulation engine.
+"""@file simulation_engine_examples.py
+@brief Provide test-only systems that exercise the generic simulation engine.
 
 These are deliberately kept outside :mod:`gnc_lab.models`. They demonstrate
 engine contracts and plotting, not project dynamics, controls, estimation, or
@@ -34,12 +35,20 @@ from gnc_lab.sim.types import (
 
 @dataclass(frozen=True)
 class FirstOrderLagExample:
-    """A scalar stable lag used only for simulation-engine verification."""
+    """@brief Represent a scalar stable lag for engine verification only.
+
+    @param time_constant float: Positive lag time constant [s].
+    @param input_value float: Constant open-loop input applied to the lag.
+    """
 
     time_constant: float
     input_value: float = 1.0
 
     def __post_init__(self) -> None:
+        """@brief Validate the lag time constant.
+
+        @raises ValueError: If ``time_constant`` is not positive.
+        """
         if self.time_constant <= 0.0:
             raise ValueError("time_constant must be positive.")
 
@@ -47,12 +56,16 @@ class FirstOrderLagExample:
         """Return the fixed open-loop forcing used by the example."""
         return self.input_value
 
-    def derivative(self, time: float, state: np.ndarray, plant_input: float) -> np.ndarray:
+    def derivative(
+        self, time: float, state: np.ndarray, plant_input: float
+    ) -> np.ndarray:
         """Evaluate the scalar test equation."""
         del time
         return np.array([(float(plant_input) - state[0]) / self.time_constant])
 
-    def output(self, time: float, state: np.ndarray, plant_input: float) -> dict[str, float]:
+    def output(
+        self, time: float, state: np.ndarray, plant_input: float
+    ) -> dict[str, float]:
         """Expose a compact truth output for engine logging."""
         del time, plant_input
         return {"state": float(state[0])}
@@ -60,11 +73,18 @@ class FirstOrderLagExample:
 
 @dataclass(frozen=True)
 class HarmonicOscillatorExample:
-    """A free two-state oscillator used only for engine verification."""
+    """@brief Represent a two-state oscillator for engine verification only.
+
+    @param natural_frequency float: Positive undamped natural frequency [rad/s].
+    """
 
     natural_frequency: float
 
     def __post_init__(self) -> None:
+        """@brief Validate the natural frequency.
+
+        @raises ValueError: If ``natural_frequency`` is not positive.
+        """
         if self.natural_frequency <= 0.0:
             raise ValueError("natural_frequency must be positive.")
 
@@ -72,7 +92,9 @@ class HarmonicOscillatorExample:
         """Return the zero forcing used by this free-response example."""
         return 0.0
 
-    def derivative(self, time: float, state: np.ndarray, plant_input: float) -> np.ndarray:
+    def derivative(
+        self, time: float, state: np.ndarray, plant_input: float
+    ) -> np.ndarray:
         """Evaluate a generic unit-mass oscillator with optional forcing."""
         del time
         return np.array(
@@ -82,7 +104,9 @@ class HarmonicOscillatorExample:
             ]
         )
 
-    def output(self, time: float, state: np.ndarray, plant_input: float) -> dict[str, float]:
+    def output(
+        self, time: float, state: np.ndarray, plant_input: float
+    ) -> dict[str, float]:
         """Expose position and velocity for recorded-output coverage."""
         del time, plant_input
         return {"position": float(state[0]), "velocity": float(state[1])}
@@ -90,7 +114,13 @@ class HarmonicOscillatorExample:
 
 @dataclass(frozen=True)
 class MassSpringDamperExample:
-    """A forced second-order response used only for engine verification."""
+    """@brief Represent a forced second-order response for engine verification.
+
+    @param damping float: Non-negative viscous damping coefficient [N s/m].
+    @param mass float: Positive lumped mass [kg].
+    @param spring float: Positive spring coefficient [N/m].
+    @param input_value float: Constant open-loop force input [N].
+    """
 
     damping: float
     mass: float = 1.0
@@ -98,20 +128,33 @@ class MassSpringDamperExample:
     input_value: float = 1.0
 
     def __post_init__(self) -> None:
+        """@brief Validate mass-spring-damper physical parameters.
+
+        @raises ValueError: If mass or spring is non-positive, or damping is
+            negative.
+        """
         if self.mass <= 0.0 or self.spring <= 0.0 or self.damping < 0.0:
-            raise ValueError("mass and spring must be positive and damping non-negative.")
+            raise ValueError(
+                "mass and spring must be positive and damping non-negative."
+            )
 
     def default_input(self) -> float:
         """Return the fixed step forcing used by the example."""
         return self.input_value
 
-    def derivative(self, time: float, state: np.ndarray, plant_input: float) -> np.ndarray:
+    def derivative(
+        self, time: float, state: np.ndarray, plant_input: float
+    ) -> np.ndarray:
         """Evaluate the generic forced mass-spring-damper test equation."""
         del time
-        acceleration = float(plant_input) - self.damping * state[1] - self.spring * state[0]
+        acceleration = (
+            float(plant_input) - self.damping * state[1] - self.spring * state[0]
+        )
         return np.array([state[1], acceleration / self.mass])
 
-    def output(self, time: float, state: np.ndarray, plant_input: float) -> dict[str, float]:
+    def output(
+        self, time: float, state: np.ndarray, plant_input: float
+    ) -> dict[str, float]:
         """Expose displacement and velocity for recorded-output coverage."""
         del time, plant_input
         return {"position": float(state[0]), "velocity": float(state[1])}
@@ -119,14 +162,21 @@ class MassSpringDamperExample:
 
 @dataclass(frozen=True)
 class PositionEstimateExample:
-    """A deliberately small estimate payload for feedback-routing demonstration."""
+    """@brief Store a position estimate for feedback-routing demonstration.
+
+    @param position float: Estimated position [m] in the example coordinate.
+    """
 
     position: float
 
 
 @dataclass
 class PositionSensorExample:
-    """A perfect test-only position sensor with observable sample count."""
+    """@brief Sample perfect position while retaining an observable sample count.
+
+    @param sample_count int: Number of measurements produced in the current
+        run.
+    """
 
     sample_count: int = 0
 
@@ -150,7 +200,10 @@ class PositionSensorExample:
 class MeasurementHoldEstimatorExample:
     """A test-only estimator that holds its most recent position measurement.
 
-    It illustrates the estimator interface and sample-and-hold timing. It is
+    @param current_estimate PositionEstimateExample: Most recently received
+        position estimate.
+    @param propagation_count int: Number of propagation calls in the run.
+    @note It illustrates the estimator interface and sample-and-hold timing. It is
     not a reference observer or a recommended estimator design.
     """
 
@@ -160,7 +213,9 @@ class MeasurementHoldEstimatorExample:
     def reset(self, initial_condition: Any, rng: Generator) -> None:
         """Initialize the held estimate from a scalar example condition."""
         del rng
-        initial_position = 0.0 if initial_condition is None else float(initial_condition)
+        initial_position = (
+            0.0 if initial_condition is None else float(initial_condition)
+        )
         self.current_estimate = PositionEstimateExample(position=initial_position)
         self.propagation_count = 0
 
@@ -192,7 +247,10 @@ class MeasurementHoldEstimatorExample:
 class PositionFeedbackExampleController:
     """A minimal proportional law used only to reveal feedback routing.
 
-    This is intentionally not a reusable controller implementation. It exists
+    @param gain float: Demonstration proportional gain [nd].
+    @param setpoint float: Demonstration position setpoint [m].
+    @param feedback_kinds list[str] | None: Recorded feedback-route labels.
+    @note This is intentionally not a reusable controller implementation. It exists
     solely to make truth feedback and a held estimate produce distinct engine
     traces under otherwise identical test conditions.
     """
@@ -225,11 +283,18 @@ class PositionFeedbackExampleController:
     def snapshot(self) -> dict[str, int | str | None]:
         """Expose the most recent feedback route for the result history."""
         last_kind = self.feedback_kinds[-1] if self.feedback_kinds else None
-        return {"feedback_updates": len(self.feedback_kinds or []), "last_kind": last_kind}
+        return {
+            "feedback_updates": len(self.feedback_kinds or []),
+            "last_kind": last_kind,
+        }
 
 
 def run_example_simulations() -> dict[str, dict[str, SimulationResult]]:
-    """Run two open-loop cases for each test-only example system."""
+    """@brief Run two open-loop cases for each test-only example system.
+
+    @return dict[str, dict[str, SimulationResult]]: Results keyed first by
+        system type and then by case label.
+    """
     engine = SimulationEngine()
     cases: dict[str, dict[str, SimulationResult]] = {
         "first_order_lag": {
@@ -288,7 +353,13 @@ def run_oscillator_frequency_monte_carlo(
     seed: int = 20261018,
     trial_count: int = 24,
 ) -> tuple[np.ndarray, tuple[SimulationResult, ...]]:
-    """Run a reproducible frequency-variation ensemble for the oscillator.
+    """@brief Run a reproducible frequency-variation oscillator ensemble.
+
+    @param seed int: Non-negative root seed for sampled natural frequencies.
+    @param trial_count int: Positive number of Monte-Carlo trials.
+    @return tuple[np.ndarray, tuple[SimulationResult, ...]]: Sampled natural
+        frequencies [rad/s] and one result for each trial.
+    @raises ValueError: If ``trial_count`` is not positive.
 
     The variations represent uncertain model parameters, not sensor or actuator
     noise. A named experiment-level random stream keeps the sampled parameter
@@ -298,7 +369,9 @@ def run_oscillator_frequency_monte_carlo(
         raise ValueError("trial_count must be positive.")
 
     variation_rng = NamedRandomStreams(seed).generator("example:oscillator-frequency")
-    frequencies = np.clip(variation_rng.normal(loc=1.0, scale=0.12, size=trial_count), 0.1, None)
+    frequencies = np.clip(
+        variation_rng.normal(loc=1.0, scale=0.12, size=trial_count), 0.1, None
+    )
     engine = SimulationEngine()
     results = tuple(
         _run_open_loop(
@@ -323,7 +396,9 @@ def run_oscillator_frequency_monte_carlo(
 
 
 def run_truth_vs_estimator_feedback_example() -> dict[str, SimulationResult]:
-    """Run equivalent test plants with truth and sample-held estimate feedback.
+    """@brief Run equivalent plants with truth and held-estimate feedback.
+
+    @return dict[str, SimulationResult]: Results keyed by feedback route.
 
     The estimated-feedback case uses a perfect but slow position sensor and a
     deliberately simplistic measurement-hold estimator. This isolates feedback
@@ -342,6 +417,13 @@ def run_truth_vs_estimator_feedback_example() -> dict[str, SimulationResult]:
 
 
 def _run_feedback_case(name: str, with_estimator: bool) -> SimulationResult:
+    """@brief Build and run one internal feedback-routing demonstration case.
+
+    @param name str: Metadata name assigned to the simulation result.
+    @param with_estimator bool: Whether to route feedback through the
+        measurement-hold estimator.
+    @return SimulationResult: Completed test-only feedback-routing run.
+    """
     controller = PositionFeedbackExampleController()
     estimator = MeasurementHoldEstimatorExample()
     sensor = PositionSensorExample()
@@ -365,7 +447,11 @@ def _run_feedback_case(name: str, with_estimator: bool) -> SimulationResult:
 
 
 def render_example_figures(output_directory: Path) -> dict[str, Path]:
-    """Run all examples and save the documentation figures without a GUI."""
+    """@brief Run all examples and save documentation figures without a GUI.
+
+    @param output_directory Path: Directory that receives generated PNG files.
+    @return dict[str, Path]: Saved paths keyed by example figure name.
+    """
     cases = run_example_simulations()
     specifications = {
         "first_order_lag": ("First-order lag engine example", ("State",)),
@@ -415,17 +501,32 @@ def _run_open_loop(
     duration: float,
     metadata: SimulationMetadata | None = None,
 ) -> SimulationResult:
+    """@brief Build and run one internal open-loop test case.
+
+    @param engine SimulationEngine: Engine used to run the case.
+    @param name str: Metadata name for a default result.
+    @param model ContinuousModel: Test-only model to simulate.
+    @param initial_state np.ndarray: Initial truth state for ``model``.
+    @param duration float: Simulation duration [s].
+    @param metadata SimulationMetadata | None: Optional metadata override.
+    @return SimulationResult: Completed open-loop simulation.
+    """
     plan = SimulationPlan(
         model=model,
         initial_state=initial_state,
         config=SimulationConfig(start_time=0.0, stop_time=duration, plant_dt=0.01),
-        metadata=metadata or SimulationMetadata(name=name, tags=("simulation-engine-example",)),
+        metadata=metadata
+        or SimulationMetadata(name=name, tags=("simulation-engine-example",)),
     )
     return engine.run(plan)
 
 
 def main() -> None:
-    """Render the checked-in documentation figures from the command line."""
+    """@brief Render checked-in documentation figures from the command line.
+
+    @note This command-line entry point accepts ``--output-directory`` and
+    writes no engineering models or algorithm implementations.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output-directory",

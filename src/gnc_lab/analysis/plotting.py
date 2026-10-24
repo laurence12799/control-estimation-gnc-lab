@@ -1,4 +1,9 @@
-"""Reproducible non-interactive plots for recorded simulation histories."""
+"""@file plotting.py
+@brief Generate reproducible non-interactive plots from simulation histories.
+
+@details The module selects Matplotlib's non-interactive ``Agg`` backend so
+plots render consistently in CI and command-line workflows.
+"""
 
 from __future__ import annotations
 
@@ -21,7 +26,16 @@ def plot_state_comparison(
     title: str,
     output_path: Path,
 ) -> Path:
-    """Save one state-history figure comparing one or more simulation cases."""
+    """@brief Save a state-history figure comparing simulation cases.
+
+    @param cases Mapping[str, SimulationResult]: Named results to compare.
+    @param state_labels Sequence[str]: One label per state-vector element.
+    @param title str: Figure title.
+    @param output_path Path: Destination PNG path.
+    @return Path: Saved ``output_path``.
+    @raises ValueError: If no cases are provided, labels do not match state
+        dimension, or compared results have different dimensions.
+    """
     if not cases:
         raise ValueError("At least one simulation case is required for a plot.")
 
@@ -66,11 +80,28 @@ def plot_state_ensemble(
     parameter_values: np.ndarray,
     parameter_label: str,
 ) -> Path:
-    """Save a Monte-Carlo state ensemble with percentile envelope and sample histogram."""
+    """@brief Save a Monte-Carlo state ensemble and parameter histogram.
+
+    @param results Sequence[SimulationResult]: Ensemble results on one time
+        grid.
+    @param state_index int: Zero-based plotted state-vector index.
+    @param state_label str: Y-axis label for the selected state.
+    @param title str: Figure title.
+    @param output_path Path: Destination PNG path.
+    @param parameter_values np.ndarray: One sampled parameter per result.
+    @param parameter_label str: Histogram x-axis label.
+    @return Path: Saved ``output_path``.
+    @raises ValueError: If results are empty, parameter count differs, state
+        index is invalid, or time grids differ.
+    """
     if not results:
-        raise ValueError("At least one simulation result is required for an ensemble plot.")
+        raise ValueError(
+            "At least one simulation result is required for an ensemble plot."
+        )
     if len(results) != len(parameter_values):
-        raise ValueError("parameter_values must contain one entry per simulation result.")
+        raise ValueError(
+            "parameter_values must contain one entry per simulation result."
+        )
 
     times = results[0].times
     trajectories = []
@@ -92,7 +123,9 @@ def plot_state_ensemble(
     for trajectory in values:
         history_axis.plot(times, trajectory, color="C0", alpha=0.18, linewidth=0.8)
     lower, median, upper = np.quantile(values, (0.05, 0.5, 0.95), axis=0)
-    history_axis.fill_between(times, lower, upper, color="C0", alpha=0.25, label="5–95%")
+    history_axis.fill_between(
+        times, lower, upper, color="C0", alpha=0.25, label="5–95%"
+    )
     history_axis.plot(times, median, color="C0", linewidth=2.0, label="Median")
     history_axis.set_title(title)
     history_axis.set_xlabel("Time [s]")

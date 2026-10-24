@@ -1,4 +1,5 @@
-"""Reusable numerical simulation infrastructure.
+"""@file __init__.py
+@brief Re-export reusable numerical simulation infrastructure.
 
 No model, controller, estimator, or guidance implementation is provided here.
 Those components are supplied by the project owner through the published

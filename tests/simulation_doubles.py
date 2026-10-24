@@ -23,13 +23,17 @@ class ScalarInputTestDouble:
         """Return the scalar default input."""
         return self.default_value
 
-    def derivative(self, time: float, state: np.ndarray, plant_input: float) -> np.ndarray:
+    def derivative(
+        self, time: float, state: np.ndarray, plant_input: float
+    ) -> np.ndarray:
         """Record the held input and return a constant-rate generic RHS."""
         del time, state
         self.rhs_inputs.append(float(plant_input))
         return np.array([float(plant_input)])
 
-    def output(self, time: float, state: np.ndarray, plant_input: float) -> dict[str, float]:
+    def output(
+        self, time: float, state: np.ndarray, plant_input: float
+    ) -> dict[str, float]:
         """Return a minimal truth output for orchestration tests."""
         del time, plant_input
         return {"value": float(state[0])}
@@ -42,12 +46,16 @@ class StaticTestDouble:
         """Return the quiescent scalar input."""
         return 0.0
 
-    def derivative(self, time: float, state: np.ndarray, plant_input: float) -> np.ndarray:
+    def derivative(
+        self, time: float, state: np.ndarray, plant_input: float
+    ) -> np.ndarray:
         """Return zero state change regardless of the input."""
         del time, plant_input
         return np.zeros_like(state)
 
-    def output(self, time: float, state: np.ndarray, plant_input: float) -> dict[str, float]:
+    def output(
+        self, time: float, state: np.ndarray, plant_input: float
+    ) -> dict[str, float]:
         """Return the constant truth quantity sensed in noise tests."""
         del time, plant_input
         return {"value": float(state[0])}
@@ -76,7 +84,10 @@ class StatefulPlanner:
 
     def snapshot(self) -> dict[str, Any]:
         """Expose serializable state for provenance assertions."""
-        return {"initial_condition": self.initial_condition, "updates": len(self.update_times)}
+        return {
+            "initial_condition": self.initial_condition,
+            "updates": len(self.update_times),
+        }
 
 
 @dataclass
@@ -103,7 +114,10 @@ class StatefulController:
 
     def snapshot(self) -> dict[str, Any]:
         """Expose serializable state for provenance assertions."""
-        return {"initial_condition": self.initial_condition, "updates": len(self.update_times)}
+        return {
+            "initial_condition": self.initial_condition,
+            "updates": len(self.update_times),
+        }
 
 
 @dataclass
@@ -161,7 +175,9 @@ class NoiseSensor:
     def sample(self, snapshot: ModelSnapshot, rng: Generator) -> float:
         """Return the truth value with reproducible sensor-local noise."""
         self.sample_count += 1
-        return float(snapshot.state[0] + rng.normal(scale=self.noise_standard_deviation))
+        return float(
+            snapshot.state[0] + rng.normal(scale=self.noise_standard_deviation)
+        )
 
     def snapshot(self) -> dict[str, Any]:
         """Expose serializable state for provenance assertions."""

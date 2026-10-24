@@ -15,7 +15,9 @@ from gnc_lab.sim.types import (
 from tests.simulation_doubles import ScalarInputTestDouble, StatefulController
 
 
-def test_plant_input_is_held_for_every_rk4_stage_until_the_next_command_update() -> None:
+def test_plant_input_is_held_for_every_rk4_stage_until_the_next_command_update() -> (
+    None
+):
     """A controller update cannot alter an input inside an RK4 plant interval."""
     model = ScalarInputTestDouble()
     controller = StatefulController()
@@ -30,5 +32,11 @@ def test_plant_input_is_held_for_every_rk4_stage_until_the_next_command_update()
     )
 
     assert [record.command for record in result.records] == [1.0, 1.0, 2.0, 2.0, 3.0]
-    assert [record.plant_input for record in result.records] == [1.0, 1.0, 2.0, 2.0, 3.0]
+    assert [record.plant_input for record in result.records] == [
+        1.0,
+        1.0,
+        2.0,
+        2.0,
+        3.0,
+    ]
     assert model.rhs_inputs == [1.0] * 8 + [2.0] * 8
